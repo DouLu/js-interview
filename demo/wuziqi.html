@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>五子棋游戏</title>
+    <style>
+        #qipan{
+            margin: auto;
+        }
+        #qipan td{
+            position: relative;
+            border:solid 1px bisque;
+        }
+        #qipan td.black:before{
+            content: '';
+            position: absolute;
+            top:10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background-color: #000;
+            box-shadow: inset 0 0 25px rgba(255,255,255,.8);
+            /*box-shadow:inset 0 3px 10px rgba(255,255,255,.7);*/
+        }
+        #qipan td.white:before{
+            content: '';
+            position: absolute;
+            top:10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background-color: #fff;
+            box-shadow:inset 0 0 10px rgba(0,0,0,.7);
+        }
+    </style>
+</head>
+<body>
+<div class="content">
+    <h1>黑棋先下</h1>
+    <table id="qipan"></table>
+</div>
+<script src="../jquery-3.2.1.min.js"></script>
+<script>
+    var initQipan = {
+        row:13,
+        col:13,
+        size:'50px',
+        boxEle:'qipan',
+        black:true,
+        blackArr:{
+            rowflag:[],
+            colflag:[]
+        },
+        whiteArr:{
+            rowflag:[],
+            colflag:[]
+        }
+    };
+    var qipan = function(){
+        var trs = '';
+        for(var r=0;r<initQipan.row;r++){
+            var tr = '<tr>';
+            var tds ='';
+            for(var c=0;c<initQipan.col;c++){
+                tds += '<td data-r="'+r+'" data-c="'+c+'" data-p="['+r+','+c+']"></td>'
+            }
+            tr +=tds+'</tr>';
+            trs +=tr;
+        }
+        $('#'+initQipan.boxEle).append(trs)
+            .find('td').css({'width':initQipan.size,'height':initQipan.size}).on('click',function () {
+                if(initQipan.black){
+                    //黑方
+                    $(this).addClass('black');
+                    initQipan.blackArr.rowflag.push(parseInt($(this).attr('data-r')));
+                    initQipan.blackArr.colflag.push(parseInt($(this).attr('data-c')));
+                    initQipan.black = false;
+                }else {
+                    //白方
+                    $(this).addClass('white');
+                    initQipan.whiteArr.rowflag.push(parseInt($(this).attr('data-r')));
+                    initQipan.whiteArr.colflag.push(parseInt($(this).attr('data-c')));
+                    initQipan.black = true;
+                }
+                new isWin(this);
+        });
+    };
+    var isWin = function (nowEle) {
+        /**
+         * 胜利规则
+         * @type {jQuery|HTMLElement}
+         * @private
+         * 每下一个棋子，判断该子上下左右，左上，左下，右上，右下，六个方向的同颜色棋子数量。
+         * 1、左斜线：判断左上方向，连续的同颜色棋子数量，<5，判断右下方向，连续的同颜色棋子数量+[左上数量]>=5，胜利
+         * 2、竖线：上下两个方向
+         * 3、右斜线：
+         */
+
+        //横向判断是否胜利
+        //当前棋子的某个方向上的连接数
+//        console.log(initQipan.blackArr,initQipan.whiteArr);
+        var _self = $(nowEle);
+        //判断黑子横向上是否胜利
+        var winArr = [];
+        initQipan.blackArr.rowflag.forEach(function (item,index,arr) {
+            if(parseInt(_self.attr('data-r'))==item){
+                winArr.push(initQipan.blackArr.colflag[index]);
+                if(winArr.length>=5){
+                    var isContinuously = false;
+                    var sortWinArr = winArr.sort(sortNumber);
+                    for(var i=0;i<sortWinArr.length-1;i++){
+                        if((sortWinArr[i]+1)==sortWinArr[i+1]){
+                            isContinuously = true;
+                        }else {
+                            if(i>=4){
+                                isContinuously = true;
+                            }
+                            isContinuously = false;
+                            return;
+                        }
+                    }
+                    if(isContinuously){
+                        console.log(winArr);
+                        alert('黑方胜');
+                    }else {
+                        console.log(winArr);
+                    }
+                }
+            }
+        });
+    };
+    new qipan();
+    function sortNumber(a, b){return a - b}
+</script>
+</body>
+</html>

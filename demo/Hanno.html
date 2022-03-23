@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>汉诺塔 待优化</title>
+    <!--https://segmentfault.com/a/1190000003993613-->
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        body{
+            position: relative;
+        }
+        .wrap{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-bottom: 50px;
+            margin-right: 300px;
+        }
+        .pillar{
+            position: relative;
+            width: 33.33%;
+            height: 500px;
+            border: solid 1px #999;
+            box-sizing: border-box;
+        }
+        .pillar:after{
+            position: absolute;
+            content: '';
+            top: 100px;
+            bottom: -30px;
+            width: 50px;
+            left: calc(50% - 25px);
+            border: solid 1px #999;
+        }
+        .pillar:before{
+            position: absolute;
+            width: 100%;
+            height: 30px;
+            bottom: -30px;
+            border: solid 1px #999;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .pillar:nth-child(1):before{
+            content: 'A';
+        }
+        .pillar:nth-child(2):before{
+            content: 'B';
+        }
+        .pillar:nth-child(3):before{
+            content: 'C';
+        }
+        .plate{
+            position: absolute;
+            height: 30px;
+            line-height: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #c69500;
+            text-align: center;
+            border-top: solid 1px #fff;
+            box-sizing: border-box;
+        }
+
+        .btn{
+            width: 200px;
+            height: 40px;
+            margin: auto;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+        .output{
+            width: 300px;
+            height: 500px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            box-sizing: border-box;
+            border: solid 1px #999;
+        }
+        .res{
+            height: calc(100% - 30px);
+            overflow-y: scroll;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="pillar" id="pillarA" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+    <div class="pillar" id="pillarB" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+    <div class="pillar" id="pillarC" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+</div>
+<div class="output">
+    <p>每步的结果：</p>
+    <ul class="res"></ul>
+</div>
+<div>
+    <div>
+        <div>
+            <label>
+                输入初始化盘子个数（1-10个）
+                <input type="number" value="3" max="10" id="initNum">
+            </label>
+            <button id="init_btn">确认输入</button>
+        </div>
+        <div>
+            <label>
+                输入您需要回退的步数
+                <input type="number" value="0" id="returnNum">
+            </label>
+            <button id="back_btn">确认输入</button>
+        </div>
+        <button class="btn" id="reback_step">返回上一步</button>
+    </div>
+</div>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+<script type="text/javascript">
+    function plateNum(n) {
+        let str = '';
+        for(let i=1;i<=n;i++){
+            str +='<div class="plate" id="p'+i+'" data-p='+i+' ondragstart="drag(event)">'+i+'</div>';
+        }
+        $('#pillarA').html(str);
+
+        let Wid = $('.pillar').width() - 40;
+        let Bot = 0;
+        for(let i=1;i<=n;i++){
+            $('#p'+i).width(Wid).css({'bottom':Bot});
+            Wid -= 40;
+            Bot += 30;
+        }
+    }
+    function initDragDom() {
+        $('.plate').attr('draggable','false');
+        $('.pillar').children('.plate:last-child').attr('draggable','true');
+    }
+
+    plateNum(3);
+    initDragDom();
+
+    let stepArr = [];
+    function nowStepState() {
+        let stepObj = {}, pA = [],pB = [], pC = [];
+        $('#pillarA').find('.plate').each(function () {
+            pA.push($(this).attr('data-p'));
+        });
+        $('#pillarB').find('.plate').each(function () {
+            pB.push($(this).attr('data-p'));
+        });
+        $('#pillarC').find('.plate').each(function () {
+            pC.push($(this).attr('data-p'));
+        });
+
+        stepObj.pA = pA;
+        stepObj.pB = pB;
+        stepObj.pC = pC;
+
+        stepArr.push(stepObj);
+        $('#returnNum').attr('max',stepArr.length);
+        $('.res').append(`<li>第${stepArr.length}步：${JSON.stringify(stepObj)}</li>`);
+    }
+
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+    function drag(ev) {
+        ev.dataTransfer.setData("Text",ev.target.id);
+    }
+    function drop(ev) {
+        ev.preventDefault();
+        let pId=ev.dataTransfer.getData("Text");
+        let zId = ev.target.id;
+
+        //对比当前柱子最后一个盘子大小与要放进来的盘子大小
+        //数字越大，盘子越小
+        if( $('#'+zId).children().length == 0){
+            //可以放置
+            ev.target.appendChild(document.getElementById(pId));
+            nowStepState();
+            initDragDom();
+        }else if(parseInt($('#'+pId).attr('data-p')) > parseInt($('#'+zId).children('.plate:last-child').attr('data-p'))){
+            //可以放置
+            ev.target.appendChild(document.getElementById(pId));
+            nowStepState();
+            initDragDom();
+        }
+
+        let hasNum = $('#'+pId).parent().children().length - 1;
+        $('#'+pId).css({'bottom':30*hasNum});
+    }
+
+    $('#init_btn').on('click',function () {
+        if($('#initNum').val() <=10){
+            plateNum($('#initNum').val());
+        }else {
+            alert('页面空间有限，暂时最大个数为10！');
+        }
+    });
+
+    let firstClick = true;
+    let preStep = 0;
+    $('#reback_step').on('click',function () {
+
+        if(firstClick){
+            preStep = stepArr.length - 1;
+            firstClick = false;
+        }
+        if(preStep === 0){
+            $('.pillar').html('');
+            plateNum($('#initNum').val());
+        }else {
+            rebackStep(preStep);
+            preStep --;
+        }
+    });
+    $('#back_btn').on('click',function () {
+        if( $('#returnNum').val() > stepArr.length){
+            alert('您目前还未走到这一步！');
+        }else {
+            rebackStep($('#returnNum').val());
+            preStep = $('#returnNum').val() -1;
+        }
+    });
+
+    function rebackStep(n) {
+        //上一步盘子分布情况
+        let preStepState = stepArr[n -1];
+
+        pillarPlate('pA',preStepState);
+
+        /*
+        for(let i=0;i<preStepState.pA.length;i++){
+
+            if($('#pillarA').has($('#p'+preStepState.pA[i])).length === 0){
+                $('#pillarA').append($('#p'+preStepState.pA[i]));
+                let hasNum = $('#pillarA').children().length - 1;
+                $('#p'+preStepState.pA[i]).css({'bottom':30*hasNum});
+            }
+        }
+        for(let i=0;i<preStepState.pB.length;i++){
+            if($('#pillarB').has($('#p'+preStepState.pB[i])).length === 0){
+                $('#pillarB').append($('#p'+preStepState.pB[i]));
+                let hasNum = $('#pillarB').children().length - 1;
+                $('#p'+preStepState.pB[i]).css({'bottom':30*hasNum});
+            }
+        }
+        for(let i=0;i<preStepState.pC.length;i++){
+            if($('#pillarC').has($('#p'+preStepState.pC[i])).length === 0){
+                $('#pillarC').append($('#p'+preStepState.pC[i]));
+                let hasNum = $('#pillarC').children().length - 1;
+                $('#p'+preStepState.pC[i]).css({'bottom':30*hasNum});
+            }
+        }
+        */
+
+
+        firstClick = false;
+    }
+
+    //每个柱子盘子放置
+    function pillarPlate(state) {
+        for(let key in state){
+            let str = '';
+            for(let i=0;i<state[key].length;i++){
+                str +='<div class="plate" id="p'+state[key][i]+'" data-p='+state[key][i]+' ondragstart="drag(event)">'+state[key][i]+'</div>';
+            }
+            $('#pillar'+key.slice(1)).html(str);
+
+            let Wid = $('.pillar').width();
+            for(let i=0;i<state[key].length;i++){
+                $('#p'+state[key][i]).width((Wid - 40*state[key][i]));
+            }
+            //循环计算底部位置
+            let initBot = parseInt($('#pillar'+key.slice(1)).children('.plate:first-child').attr('data-p'));
+            $('#pillar'+key.slice(1)).find('.plate').each(function () {
+                console.log('11'+$(this).previousSbiling);
+                $(this).css('bottom',30*($(this).attr('data-p') - initBot));
+            });
+        }
+    }
+</script>
+</body>
+</html>
